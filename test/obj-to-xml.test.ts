@@ -3,6 +3,7 @@ import fs from 'fs'
 import objToXml from '../src/obj2xml'
 import toJson from '../src/xml2obj'
 import path from 'path'
+
 const readFixture = (file: string, parseObj = false) => {
   const _file = fs.readFileSync(path.join(__dirname, '/fixtures/', file), { encoding: 'utf-8' })
   if (parseObj) return JSON.parse(_file)
@@ -63,6 +64,7 @@ test('don\'t ignore null properties (default)', function () {
 
   return Promise.resolve()
 })
+
 test('correctly reverses using alternateTextNode', () => {
   const xmlStr = '<foo attr="value">bar<subnode val="test">glass</subnode></foo>'
   const json = toJson(xmlStr, {

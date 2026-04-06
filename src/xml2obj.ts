@@ -45,12 +45,29 @@ const toJson = (xml = '', _options: toJsonOptions = {}) => {
   const textNodeName = options.textNode
 
   const root:any = {}
-
-  const stack = [] as { parent: any, name: string }[]
-
   let current = root
 
+  const stack:string[] = []
+
+  let stackId = 0
+  let previousId = 0
+
+  const reloadCurrent = () => {
+    if (stackId === previousId) return
+    previousId = stackId
+    current = root
+    for (const key of stack) {
+      current = current[key]
+      if (Array.isArray(current)) {
+        current = current.at(-1)
+      }
+    }
+  }
+
   parser.on('startElement', (name, attrs: any) => {
+    reloadCurrent()
+    stack.push(name)
+    stackId++
     if (!(name in current)) {
       current[name] = attrs
     } else {
@@ -59,17 +76,18 @@ const toJson = (xml = '', _options: toJsonOptions = {}) => {
       }
       current[name].push(attrs)
     }
-
-    stack.push({ parent: current, name })
-
-    current = attrs
   })
 
   parser.on('text', data => {
+    reloadCurrent()
     current[textNodeName] = (current[textNodeName] || '') + data
   })
 
   parser.on('endElement', (name) => {
+    reloadCurrent()
+    stack.pop()
+    stackId++
+
     if (textNodeName in current && options.trim) {
       current[textNodeName] = current[textNodeName].trim()
     }
@@ -83,8 +101,6 @@ const toJson = (xml = '', _options: toJsonOptions = {}) => {
     })
 
     if (isEmpty && hasChildren) delete current[textNodeName]
-
-    current = stack.pop()?.parent
   })
 
   if (!parser.parse(xml)) {
